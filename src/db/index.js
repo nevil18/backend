@@ -1,0 +1,14 @@
+import mongoose from "mongoose"
+import { DB_NAME }from "../constants.js"
+
+const connetDB = async () => {
+    try {
+        const connection = await mongoose.connect(`${process.env.MONGO_URI}/${DB_NAME}`)
+        console.log(`mongodb connected1 host: ${connection.connection.host}`)
+    } catch (error) {
+        console.log("MONGODB connection failed", error)
+        process.exit(1)
+    }
+}   
+
+export default connetDB
