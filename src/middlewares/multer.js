@@ -1,20 +1,21 @@
 import multer from "multer";
+import path from "path";
+import fs from "fs";
 
-// Configure storage settings
+const uploadPath = path.resolve("public/temp");
+
+// Create folder if not exists
+if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+}
+
 const storage = multer.diskStorage({
-
-    // Where to store uploaded file
     destination: function (req, file, cb) {
-        cb(null, "./public/temp");
+        cb(null, uploadPath);
     },
-
-    // What should be the file name
     filename: function (req, file, cb) {
-        cb(null, file.originalname);
+        cb(null, Date.now() + "-" + file.originalname);
     }
 });
 
-// Create multer upload middleware
-export const upload = multer({
-    storage: storage,
-});
+export const upload = multer({ storage });

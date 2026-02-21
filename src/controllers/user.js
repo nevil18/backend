@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { apiError } from "../utils/apiError.js"
-import {User} from "../models/user.model.js"
-import {uploadOnCloudinary} from "../config/cloudinary.js"
+import { ApiError } from "../utils/ApiError.js"
+import { User } from "../models/user.model.js"
+import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -11,26 +11,41 @@ const registerUser = asyncHandler(async (req, res) => {
     if( 
         [fullname, username, email, password].some(field => !field || field.trim() === "")
     ) {
-        throw new apiError("All fields are required", 400)
+        throw new ApiError(400, "All fields are required")
     }
 
     const existUser = await User.findOne({ $or: [{ username }, { email }] })
     if(existUser) {
-        throw new apiError("Username or email already exists", 409)
+        throw new ApiError(409, "Username or email already exists")
     }
 
+    // console.log(req.body);
+    
+
     const avatarlocalpath = req.files?.avatar?.[0]?.path;
-    const coverimagelocalpath = req.files?.coverimage?.[0]?.path;
+    // const coverimagelocalpath = req.files?.coverimage?.[0]?.path;
+
+    let coverimagelocalpath = null;
+    if (req.files?.coverimage?.[0]?.path) {
+        coverimagelocalpath = req.files.coverimage[0].path;
+    }
+
+    // console.log(req.files);
+    
 
     if(!avatarlocalpath) {
-        throw new apiError("Avatar image is required", 400)
+        throw new ApiError(400, "Avatar image is required")
     }
 
     const avatar = await uploadOnCloudinary(avatarlocalpath)
-    const coverimage = await uploadOnCloudinary(coverimagelocalpath)
+    let coverimage = null;
+    if (coverimagelocalpath) {
+        coverimage = await uploadOnCloudinary(coverimagelocalpath);
+    }
+
 
     if(!avatar) {
-        throw new apiError("avatar file is required", 400)
+        throw new ApiError(400, "Avatar file upload failed")
     }
 
     const user = await User.create({
@@ -45,10 +60,10 @@ const registerUser = asyncHandler(async (req, res) => {
     const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
     if(!createdUser) {
-        throw new apiError("User creation failed", 500)
+        throw new ApiError(500, "User creation failed")
     }
 
-    return res.status(201).json(new ApiResponse(200, "User registered successfully", createdUser))
+    return res.status(201).json(new ApiResponse(201, "User registered successfully", createdUser))
 })
 
 export { registerUser }
